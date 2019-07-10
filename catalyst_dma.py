@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from logbook import Logger
-
 from catalyst import run_algorithm
 from catalyst.api import (record, symbol, order_target_percent,)
 from catalyst.exchange.utils.stats_utils import extract_transactions
@@ -10,7 +9,7 @@ from catalyst.exchange.utils.stats_utils import extract_transactions
 NAMESPACE = 'dual_moving_average'
 log = Logger(NAMESPACE)
 
-bias = 1.001
+bias = 1.01
 
 def initialize(context):
     context.i = 0
@@ -20,8 +19,8 @@ def initialize(context):
 
 def handle_data(context, data):
     # define the windows for the moving averages
-    short_window = 10
-    long_window = 50
+    short_window = 20
+    long_window = 120
 
     # Skip as many bars as long_window to properly compute the average
     context.i += 1
@@ -37,13 +36,16 @@ def handle_data(context, data):
                               bar_count=short_window,
                               frequency="1T",
                               )
-    short_mavg = short_data.mean()
+    # short_mavg = short_data.mean()
+    short_mavg = short_data.ewm(span=short_window, adjust=False).mean().mean()
+
     long_data = data.history(context.asset,
                              'price',
                              bar_count=long_window,
                              frequency="1T",
                              )
-    long_mavg = long_data.mean()
+    # long_mavg = long_data.mean()
+    long_mavg = long_data.ewm(span=long_window, adjust=False).mean().mean()
 
     # Let's keep the price of our asset in a more handy variable
     price = data.current(context.asset, 'price')
@@ -160,6 +162,6 @@ if __name__ == '__main__':
             exchange_name='binance',
             algo_namespace=NAMESPACE,
             quote_currency='usdt',
-            start=pd.to_datetime('2019-7-5', utc=True),
-            end=pd.to_datetime('2019-7-7', utc=True),
+            start=pd.to_datetime('2019-6-25', utc=True),
+            end=pd.to_datetime('2019-7-9', utc=True),
         )
